@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#071411" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Private, browser-based remote heart-rate estimation using face tracking and rPPG signal analysis." />
+    <meta name="referrer" content="no-referrer" />
+    <title>PulseCam — webcam heart-rate experiment</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#measurement">Skip to measurement</a>
+
+    <header class="site-header">
+      <div class="brand" aria-label="PulseCam home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 42 42" role="img">
+            <path d="M4 22h8l3.3-8.2 5.6 16.4 4.4-11 2.5 2.8H38" />
+          </svg>
+        </span>
+        <span>
+          <strong>PulseCam</strong>
+          <small>remote PPG laboratory</small>
+        </span>
+      </div>
+      <div class="privacy-pill" title="Frames stay in this browser tab">
+        <span class="privacy-dot" aria-hidden="true"></span>
+        Local processing
+      </div>
+    </header>
+
+    <main id="measurement">
+      <section class="hero-copy" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Camera-based pulse estimation</p>
+          <h1 id="page-title">See the pulse hidden in your skin colour.</h1>
+        </div>
+        <p class="lede">
+          PulseCam follows stable skin regions on your forehead and cheeks, then looks for the tiny, repeating colour changes caused by blood flow. Your video is processed on this device and is never uploaded.
+        </p>
+      </section>
+
+      <section class="measurement-grid">
+        <article class="camera-card panel" aria-labelledby="camera-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Live camera</p>
+              <h2 id="camera-heading">Face tracking</h2>
+            </div>
+            <div class="live-state" id="liveState" data-state="idle">
+              <span aria-hidden="true"></span>
+              <b>Idle</b>
+            </div>
+          </div>
+
+          <div class="camera-stage" id="cameraStage">
+            <video id="camera" autoplay muted playsinline aria-label="Live camera preview"></video>
+            <canvas id="overlay" aria-hidden="true"></canvas>
+
+            <div class="camera-placeholder" id="cameraPlaceholder">
+              <div class="placeholder-orbit" aria-hidden="true">
+                <svg viewBox="0 0 100 100">
+                  <path d="M28 42c0-15 9-25 22-25s22 10 22 25v9c0 19-9 32-22 32S28 70 28 51Z" />
+                  <path d="M34 43h11M55 43h11M43 62c4 3 10 3 14 0" />
+                </svg>
+              </div>
+              <strong>Ready when you are</strong>
+              <span>Camera permission is only requested after you start.</span>
+            </div>
+
+            <div class="camera-coach" id="cameraCoach" role="status" aria-live="polite">
+              <span class="coach-icon" aria-hidden="true">●</span>
+              <span id="coachText">Press Start measurement</span>
+            </div>
+          </div>
+
+          <div class="camera-actions">
+            <button class="button button-primary" id="startButton" type="button">
+              <span class="button-icon" aria-hidden="true">▶</span>
+              <span>Start measurement</span>
+            </button>
+            <button class="button button-secondary" id="stopButton" type="button" disabled>
+              Stop
+            </button>
+            <button class="button button-icon-only" id="fullscreenButton" type="button" aria-label="Open camera full screen" title="Full screen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /></svg>
+            </button>
+          </div>
+        </article>
+
+        <aside class="result-card panel" aria-labelledby="result-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Current estimate</p>
+              <h2 id="result-heading">Heart rate</h2>
+            </div>
+            <button class="text-button" id="resetButton" type="button" disabled>Reset</button>
+          </div>
+
+          <div class="bpm-display" id="bpmDisplay" data-ready="false">
+            <div class="pulse-halo" id="pulseHalo" aria-hidden="true"></div>
+            <div class="bpm-value" id="bpmValue">—</div>
+            <div class="bpm-unit">BPM</div>
+          </div>
+
+          <div class="confidence-block">
+            <div class="confidence-label">
+              <span>Confidence</span>
+              <strong id="confidenceValue">Waiting</strong>
+            </div>
+            <div class="confidence-track" role="progressbar" id="confidenceBar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Measurement confidence">
+              <span></span>
+            </div>
+          </div>
+
+          <div class="collection-block">
+            <div class="collection-label">
+              <span id="collectionLabel">No signal collected</span>
+              <span id="collectionTime">0.0 s</span>
+            </div>
+            <div class="collection-track" aria-hidden="true"><span id="collectionBar"></span></div>
+          </div>
+
+          <dl class="quality-grid" aria-label="Signal quality checks">
+            <div class="quality-item" id="qualityFace" data-level="idle">
+              <dt><span class="quality-dot"></span>Face</dt>
+              <dd>Waiting</dd>
+            </div>
+            <div class="quality-item" id="qualityLight" data-level="idle">
+              <dt><span class="quality-dot"></span>Lighting</dt>
+              <dd>Waiting</dd>
+            </div>
+            <div class="quality-item" id="qualityMotion" data-level="idle">
+              <dt><span class="quality-dot"></span>Motion</dt>
+              <dd>Waiting</dd>
+            </div>
+            <div class="quality-item" id="qualitySignal" data-level="idle">
+              <dt><span class="quality-dot"></span>Signal</dt>
+              <dd>Waiting</dd>
+            </div>
+          </dl>
+
+          <div class="session-summary" aria-label="Session statistics">
+            <div><span>Average</span><strong id="averageBpm">—</strong></div>
+            <div><span>Range</span><strong id="rangeBpm">—</strong></div>
+            <div><span>Camera</span><strong id="cameraFps">— fps</strong></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="charts-grid" aria-label="Signal analysis">
+        <article class="chart-card panel">
+          <div class="chart-heading">
+            <div>
+              <p class="panel-kicker">Recovered pulse</p>
+              <h2>Signal</h2>
+            </div>
+            <span>latest 8 seconds</span>
+          </div>
+          <canvas id="signalChart" role="img" aria-label="Recovered pulse waveform chart"></canvas>
+        </article>
+
+        <article class="chart-card panel">
+          <div class="chart-heading">
+            <div>
+              <p class="panel-kicker">Frequency analysis</p>
+              <h2>Spectrum</h2>
+            </div>
+            <span id="peakLabel">no peak</span>
+          </div>
+          <canvas id="spectrumChart" role="img" aria-label="Pulse frequency spectrum chart"></canvas>
+        </article>
+      </section>
+
+      <section class="lower-grid">
+        <article class="panel guide-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">For a cleaner reading</p>
+              <h2>Measurement guide</h2>
+            </div>
+          </div>
+          <ol class="guide-list">
+            <li><span>01</span><div><strong>Use steady front light</strong><p>Face a window or lamp. Avoid a bright window behind you and flickering LEDs.</p></div></li>
+            <li><span>02</span><div><strong>Fill the frame</strong><p>Keep your face roughly an arm’s length away, looking mostly straight at the camera.</p></div></li>
+            <li><span>03</span><div><strong>Stay still for 12 seconds</strong><p>Rest the device on something solid. Talking and head movement can overwhelm the pulse signal.</p></div></li>
+          </ol>
+        </article>
+
+        <article class="panel settings-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Measurement controls</p>
+              <h2>Settings</h2>
+            </div>
+          </div>
+
+          <div class="settings-form">
+            <label class="field field-wide">
+              <span>Camera</span>
+              <select id="cameraSelect" disabled>
+                <option value="">Default camera</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Minimum BPM</span>
+              <input id="minBpm" type="number" min="35" max="180" step="1" value="45" />
+            </label>
+
+            <label class="field">
+              <span>Maximum BPM</span>
+              <input id="maxBpm" type="number" min="60" max="240" step="1" value="200" />
+            </label>
+
+            <label class="field field-wide">
+              <span>Analysis window</span>
+              <select id="windowSeconds">
+                <option value="10">10 seconds — faster</option>
+                <option value="12" selected>12 seconds — balanced</option>
+                <option value="15">15 seconds — steadier</option>
+                <option value="20">20 seconds — most stable</option>
+              </select>
+            </label>
+
+            <label class="toggle-field">
+              <span><strong>Mirror preview</strong><small>Does not change analysis</small></span>
+              <input id="mirrorToggle" type="checkbox" checked />
+              <i aria-hidden="true"></i>
+            </label>
+
+            <label class="toggle-field">
+              <span><strong>Show skin regions</strong><small>Forehead and both cheeks</small></span>
+              <input id="roiToggle" type="checkbox" checked />
+              <i aria-hidden="true"></i>
+            </label>
+          </div>
+
+          <button class="button button-secondary export-button" id="exportButton" type="button" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" /></svg>
+            Export session CSV
+          </button>
+        </article>
+      </section>
+
+      <section class="science-note panel" aria-labelledby="science-heading">
+        <div class="science-icon" aria-hidden="true">i</div>
+        <div>
+          <h2 id="science-heading">What this number means</h2>
+          <p>
+            This is an experimental remote-photoplethysmography estimate, not a medical measurement. Ordinary webcams compress colour, adjust exposure, and run at uneven frame rates; movement and lighting can still produce a plausible but incorrect result. Use a validated device for health decisions. If you feel unwell, seek medical help rather than relying on this page.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>PulseCam · open-source browser experiment</span>
+      <a href="https://github.com/SMUsamaShah/webcam-heart-rate" rel="noopener noreferrer">View source on GitHub</a>
+    </footer>
+
+    <noscript>This experiment needs JavaScript to access and analyse camera frames.</noscript>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>

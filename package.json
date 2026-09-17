@@ -1,0 +1,14 @@
+{
+  "name": "webcam-heart-rate",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-only webcam heart-rate estimation with MediaPipe face tracking and remote PPG signal processing.",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
