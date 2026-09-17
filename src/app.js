@@ -368,7 +368,9 @@ function updateGeometry(landmarks, now) {
   };
 
   const rois = [
-    rotatedRectangle(localPoint(0, 0.22), ux, uy, faceWidth * 0.155, faceHeight * 0.055),
+    // Keep the forehead sample above the eyebrows/glabella, where skin is less
+    // affected by brow movement and hair than the previous centre point.
+    rotatedRectangle(localPoint(0, 0.12), ux, uy, faceWidth * 0.155, faceHeight * 0.055),
     rotatedRectangle(localPoint(-0.215, 0.51), ux, uy, faceWidth * 0.105, faceHeight * 0.072),
     rotatedRectangle(localPoint(0.215, 0.51), ux, uy, faceWidth * 0.105, faceHeight * 0.072),
   ].map((polygon) => polygon.map((p) => ({ x: clamp(p.x, 0, 1), y: clamp(p.y, 0, 1) })));
