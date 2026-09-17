@@ -47,6 +47,8 @@ npm test
 
 They verify resampling, POS extraction, spectral peak recovery, end-to-end BPM estimation, and confidence penalties.
 
+The same deterministic suite runs in GitHub Actions on every push and pull request.
+
 ## Signal pipeline
 
 1. `requestVideoFrameCallback()` runs once per presented camera frame and supplies a high-resolution clock.
